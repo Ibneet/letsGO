@@ -2,10 +2,18 @@ const express = require("express");
 const bodyParser = require("body-parser");
 
 const journeysRoutes = require('./routes/journeys-routes');
+const HttpError = require('./models/http-error');
 
 const app = express();
 
+app.use(bodyParser.json());
+
 app.use('/api/journeys',journeysRoutes);
+
+app.use((req, res, next) => {
+    const error = new HttpError('Could not find the specified route', 404);
+    throw error;
+})
 
 app.use((error, req, res, next) => {
     if(res.headerSent){

@@ -1,4 +1,5 @@
 const {v4: uuidv4} = require('uuid');
+const { validationResult } = require('express-validator');
 
 const HttpError = require('../models/http-error');
 
@@ -17,7 +18,7 @@ let DUMMY_JOURNEYS = [
         to: 'Patiala',
         date: '2020-05-2',
         time: '8:00P.M.',
-        withWhom: 'Rupali'
+        withWhom: 'u1'
     }
 ];
 
@@ -26,7 +27,7 @@ const getCompanion = (req, res, next) => {
     const journeyFrom = req.params.jfrom;
     const journeyTo = req.params.jto;
     const journeyDate = req.params.jdate;
-    const journey = DUMMY_JOURNEYS.find(j => {
+    const journey = DUMMY_JOURNEYS.filter(j => {
         if(j.journey_id !== journeyId){
             if(j.from === journeyFrom){
                 if(j.to === journeyTo){
@@ -40,7 +41,7 @@ const getCompanion = (req, res, next) => {
         }
     })
 
-    if(!journey){
+    if(!journey || journey.length === 0){
         throw new HttpError('No companion found.', 404);
     }
 
@@ -86,14 +87,20 @@ const getCurrentJourneys = (req, res, next) => {
 }
 
 const addJourney = (req, res, next) => {
-    const { from, to, date, time, withWhom } = req.body;
+    const errors = validationResult(req);
+    if(!errors.isEmpty()){
+        console.log(errors);
+        throw new HttpError('Invalid inputs passed', 422);
+    }
+
+    const { from, to, date, time } = req.body;
     const addedJourney = {
         journey_id: uuidv4(),
         from,
         to,
         date,
         time,
-        withWhom 
+        withWhom: null
     };
 
     DUMMY_JOURNEYS.push(addedJourney);
@@ -106,13 +113,36 @@ const updateJourney = (req, res, next) => {
 
     const updatedJourney = { ...DUMMY_JOURNEYS.find(j => j.journey_id === journeyId)};
     const journeyIndex = DUMMY_JOURNEYS.findIndex(j => j.journey_id === journeyId);
-    updatedJourney.from = from;
-    updatedJourney.to = to;
-    updatedJourney.date = date;
-    updatedJourney.time = time;
+    updatedJourney.from = from?from:updatedJourney.from;
+    updatedJourney.to = to?to:updatedJourney.to;
+    updatedJourney.date = date?date:updatedJourney.date;
+    updatedJourney.time = time?time:updatedJourney.time;
 
-    DUMMY_JOURNEYS[journeyIndex] = updatedJourney;
+    DUMMY_JOURNEYS[journeyIndex] = {...DUMMY_JOURNEYS[journeyIndex],...updatedJourney};
     res.status(200).json({journey: updatedJourney});
+}
+
+const journeyDone = (req, res, next) => {
+    const journeyId = req.params.jid;
+    const companion = req.params.uid;
+
+    const journeyCompleted = { ...DUMMY_JOURNEYS.find(j => j.journey_id === journeyId)};
+    const journeyIndex = DUMMY_JOURNEYS.findIndex(j => j.journey_id === journeyId);
+    journeyCompleted.withWhom = companion;
+
+    DUMMY_JOURNEYS[journeyIndex] = {...DUMMY_JOURNEYS[journeyIndex],...journeyCompleted};
+    res.status(200).json({journey: journeyCompleted});
+}
+
+const notDoneYet = (req, res, next) => {
+    const journeyId = req.params.jid;
+
+    const journeyNotCompleted = { ...DUMMY_JOURNEYS.find(j => j.journey_id === journeyId)};
+    const journeyIndex = DUMMY_JOURNEYS.findIndex(j => j.journey_id === journeyId);
+    journeyNotCompleted.withWhom = null;
+
+    DUMMY_JOURNEYS[journeyIndex] = {...DUMMY_JOURNEYS[journeyIndex],...journeyNotCompleted};
+    res.status(200).json({journey: journeyNotCompleted});
 }
 
 const deleteJourney = (req, res, next) => {
@@ -126,4 +156,6 @@ exports.getJournerysHistory = getJournerysHistory;
 exports.getCurrentJourneys = getCurrentJourneys;
 exports.addJourney = addJourney;
 exports.updateJourney = updateJourney;
+exports.journeyDone = journeyDone;
+exports.notDoneYet = notDoneYet;
 exports.deleteJourney = deleteJourney;

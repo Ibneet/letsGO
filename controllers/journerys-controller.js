@@ -138,47 +138,119 @@ const addJourney = async (req, res, next) => {
     res.status(201).json({journey: addedJourney});
 }
 
-const updateJourney = (req, res, next) => {
-    const { from, to, date, time } = req.body;
+const updateJourney = async (req, res, next) => {
+    const { from, to, date } = req.body;
     const journeyId = req.params.jid;
 
-    const updatedJourney = { ...DUMMY_JOURNEYS.find(j => j.journey_id === journeyId)};
-    const journeyIndex = DUMMY_JOURNEYS.findIndex(j => j.journey_id === journeyId);
-    updatedJourney.from = from?from:updatedJourney.from;
-    updatedJourney.to = to?to:updatedJourney.to;
-    updatedJourney.date = date?date:updatedJourney.date;
-    updatedJourney.time = time?time:updatedJourney.time;
+    let journey;
+    try{
+        journey = await Journey.findById(journeyId);
+    }catch(err){
+        const error = new HttpError(
+            'Something went wrong, could not update journey',
+            500
+        );
+        return next(error);
+    }
 
-    DUMMY_JOURNEYS[journeyIndex] = {...DUMMY_JOURNEYS[journeyIndex],...updatedJourney};
-    res.status(200).json({journey: updatedJourney});
+    journey.from = from?from:journey.from;
+    journey.to = to?to:journey.to;
+    journey.date = date?date:journey.date;
+
+    try{
+        await journey.save();
+    }catch(err){
+        const error = new HttpError(
+            'Something went wrong, could not update journey.',
+            500
+        );
+        return next(error);
+    }
+
+    res.status(200).json({journey: journey.toObject({ getters: true })});
 }
 
-const journeyDone = (req, res, next) => {
+const journeyDone = async (req, res, next) => {
     const journeyId = req.params.jid;
     const companion = req.params.uid;
 
-    const journeyCompleted = { ...DUMMY_JOURNEYS.find(j => j.journey_id === journeyId)};
-    const journeyIndex = DUMMY_JOURNEYS.findIndex(j => j.journey_id === journeyId);
-    journeyCompleted.withWhom = companion;
+    let journey 
+    try{
+        journey = await Journey.findById(journeyId);
+    }catch(err){
+        const error = new HttpError(
+            'Something went wrong, could not update this journey as done.',
+            500
+        )
+        return next(error);
+    }
+    journey.withWhom = companion;
 
-    DUMMY_JOURNEYS[journeyIndex] = {...DUMMY_JOURNEYS[journeyIndex],...journeyCompleted};
-    res.status(200).json({journey: journeyCompleted});
+    try{
+        await journey.save();
+    }catch(err){
+        const error = new HttpError(
+            'Something went wrong, could not update this journey as done.',
+            500
+        );
+        return next(error);
+    }
+
+    res.status(200).json({journey: journey.toObject({ getters: true })});
 }
 
-const notDoneYet = (req, res, next) => {
+const notDoneYet = async (req, res, next) => {
     const journeyId = req.params.jid;
 
-    const journeyNotCompleted = { ...DUMMY_JOURNEYS.find(j => j.journey_id === journeyId)};
-    const journeyIndex = DUMMY_JOURNEYS.findIndex(j => j.journey_id === journeyId);
-    journeyNotCompleted.withWhom = null;
+    let journey;
+    try{
+        journey = await Journey.findById(journeyId);
+    }catch(err){
+        const error = new HttpError(
+            'Something went wrong, could not update this journey as not done.',
+            500
+        )
+        return next(error);
+    }
+    journey.withWhom = null;
 
-    DUMMY_JOURNEYS[journeyIndex] = {...DUMMY_JOURNEYS[journeyIndex],...journeyNotCompleted};
-    res.status(200).json({journey: journeyNotCompleted});
+    try{
+        await journey.save();
+    }catch(err){
+        const error = new HttpError(
+            'Something went wrong, could not update this journey as not done.',
+            500
+        );
+        return next(error);
+    }
+
+    res.status(200).json({journey: journey.toObject({ getters: true })});
 }
 
-const deleteJourney = (req, res, next) => {
+const deleteJourney = async (req, res, next) => {
     const journeyId = req.params.jid;
-    DUMMY_JOURNEYS = DUMMY_JOURNEYS.filter(j => j.journey_id !== journeyId);
+    
+    let journey;
+    try{
+        journey = await Journey.findById(journeyId);
+    }catch(err){
+        const error = new HttpError(
+            'Something went wrong, could not delete this journey.',
+            500
+        );
+        return next(error);
+    }
+
+    try{
+        await journey.remove();
+    }catch(err){
+        const error = new HttpError(
+            'Something went wrong, could not delete this journey.',
+            500
+        );
+        return next(error);
+    }
+
     res.status(200).json({message: 'Deleted a journey.'});
 }
 

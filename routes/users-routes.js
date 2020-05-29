@@ -18,14 +18,17 @@ router.post('/signup',
             .normalizeEmail()
             .isEmail(),
         check('password')
-            .isLength({min: 8})
+            .isLength({min: 6})
         
     ],
     usersControllers.signup);
 
 router.patch('/details/:uid',
     [
-        check('phone_no')
+        check('image')
+            .not()
+            .isEmpty(), 
+        check('phone_number')
             .not()
             .isEmpty(), 
         check('gender')

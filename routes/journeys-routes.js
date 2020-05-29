@@ -25,11 +25,11 @@ router.post(
     journeysControllers.addJourney
 );
 
-router.put('/:jid', journeysControllers.updateJourney);
+router.patch('/:jid', journeysControllers.updateJourney);
 
-router.put('/:jid/:uid', journeysControllers.journeyDone);
+router.patch('/:jid/:uid', journeysControllers.journeyDone);
 
-router.put('/history/notYet/:jid', journeysControllers.notDoneYet);
+router.patch('/history/notYet/:jid', journeysControllers.notDoneYet);
 
 router.delete('/:jid', journeysControllers.deleteJourney);
 

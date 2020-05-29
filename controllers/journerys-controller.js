@@ -2,6 +2,7 @@ const {v4: uuidv4} = require('uuid');
 const { validationResult } = require('express-validator');
 
 const HttpError = require('../models/http-error');
+const Journey = require('../models/journey');
 
 let DUMMY_JOURNEYS = [
     {
@@ -22,88 +23,118 @@ let DUMMY_JOURNEYS = [
     }
 ];
 
-const getCompanion = (req, res, next) => {
-    const journeyId = req.params.jid;
+const getCompanion = async (req, res, next) => {
+    const journeyUser = req.params.uid;
     const journeyFrom = req.params.jfrom;
     const journeyTo = req.params.jto;
     const journeyDate = req.params.jdate;
-    const journey = DUMMY_JOURNEYS.filter(j => {
-        if(j.journey_id !== journeyId){
-            if(j.from === journeyFrom){
-                if(j.to === journeyTo){
-                    if(j.date === journeyDate){
-                        if(j.withWhom === null){
-                            return true;
-                        }
-                    }
-                }
+    let journey;
+    try{
+        journey = await Journey.find(
+            { 
+                creator: {$ne: journeyUser}, 
+                from: journeyFrom, 
+                to: journeyTo, 
+                date: journeyDate, 
+                withWhom: null 
             }
-        }
-    })
+        ).collation({ locale: 'en', strength: 2 });
+    }catch(err){
+        const error = new HttpError(
+            'Something went wrong, could not find the companion.',
+            500
+        );
+        return next(error);
+    }
+    
+    if(!journey || journey.length === 0){
+        const error = new HttpError(
+            'No companion found.', 
+            404
+        );
+        return next(error);
+    }
+
+    res.json({journey: journey.map(journey => journey.toObject({ getters: true }))});
+}
+
+const getJournerysHistory = async (req, res, next) => {
+    const journeyUser = req.params.uid;
+
+    let journey;
+    try{
+        journey = await Journey.find({creator: journeyUser, withWhom: {$ne: null}});
+    }catch(err){
+        const error = new HttpError(
+            'Something went wrong, could not find the journey.',
+            500
+        );
+        return next(error);
+    }
+    if(!journey || journey.length === 0){
+        const error = new HttpError(
+                'No journey added yet.', 
+                404
+            );
+        return next(error);
+    }
+
+    res.json({journey: journey.map(journey => journey.toObject({ getters: true }))});
+}
+
+const getCurrentJourneys = async (req, res, next) => {
+    const journeyUser = req.params.uid;
+
+    let journey;
+    try{
+        journey = await Journey.find({creator: journeyUser, withWhom: null});
+    }catch(err){
+        const error = new HttpError(
+            'Something went wrong, could not find the journey.', 
+            500
+        );
+        return next(error);
+    }
 
     if(!journey || journey.length === 0){
-        throw new HttpError('No companion found.', 404);
+        const error = new HttpError(
+                'No active journey schedule.', 
+                404
+            );
+        return next(error);
     }
 
-    res.json({journey});
+    res.json({journey: journey.map(journey => journey.toObject({ getters: true }))});
 }
 
-const getJournerysHistory = (req, res, next) => {
-    const journeyId = req.params.jid;
-    const journey = DUMMY_JOURNEYS.find(j => {
-        if(j.journey_id === journeyId){
-            if(j.withWhom !== null){
-                return true;
-            }
-        }
-    })
-
-    if(!journey){
-        return next(
-            new HttpError('No journey added yet.', 404)
-        );
-    }
-
-    res.json({journey});
-}
-
-const getCurrentJourneys = (req, res, next) => {
-    const journeyId = req.params.jid;
-    const journey = DUMMY_JOURNEYS.find(j => {
-        if(j.journey_id === journeyId){
-            if(j.withWhom === null){
-                return true;
-            }
-        }
-    })
-
-    if(!journey){
-        return next(
-            new HttpError('No active journey schedule.', 404)
-        );
-    }
-
-    res.json({journey});
-}
-
-const addJourney = (req, res, next) => {
+const addJourney = async (req, res, next) => {
     const errors = validationResult(req);
     if(!errors.isEmpty()){
         console.log(errors);
-        throw new HttpError('Invalid inputs passed', 422);
+        throw new HttpError(
+            'Invalid inputs passed', 
+            422
+        );
     }
 
-    const { from, to, date, time } = req.body;
-    const addedJourney = {
-        journey_id: uuidv4(),
+    const { from, to, date, creator } = req.body;
+    const addedJourney = new Journey({
         from,
         to,
         date,
-        time,
-        withWhom: null
-    };
+        creator
+    });
 
-    DUMMY_JOURNEYS.push(addedJourney);
+    try{
+        await addedJourney.save();
+    }catch(err){
+        const error = new HttpError(
+            'Failed to add this journey, please try again.',
+            500
+        );
+        return next(error);
+    }
+    
     res.status(201).json({journey: addedJourney});
 }
 

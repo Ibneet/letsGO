@@ -5,11 +5,11 @@ const journeysControllers = require('../controllers/journerys-controller')
 
 const router = express.Router();
 
-router.get('/:jid/:jfrom/:jto/:jdate', journeysControllers.getCompanion);
+router.get('/:uid/:jfrom/:jto/:jdate', journeysControllers.getCompanion);
 
-router.get('/history/:jid', journeysControllers.getJournerysHistory);
+router.get('/history/:uid', journeysControllers.getJournerysHistory);
 
-router.get('/current/:jid', journeysControllers.getCurrentJourneys);
+router.get('/current/:uid', journeysControllers.getCurrentJourneys);
 
 router.post(
     '/',

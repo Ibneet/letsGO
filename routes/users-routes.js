@@ -25,9 +25,6 @@ router.post('/signup',
 
 router.patch('/details/:uid',
     [
-        check('image')
-            .not()
-            .isEmpty(), 
         check('phone_number')
             .not()
             .isEmpty(), 

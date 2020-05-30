@@ -12,7 +12,7 @@ const userSchema = new Schema({
     dob: { type: Date, default: null },
     occupation: { type: String, default: null },
     image: { type: String, default: null },
-    journeys: { type: String, default: null },
+    journeys: [{ type: mongoose.Types.ObjectId, required: true, ref: 'Journey' }],
 });
 
 userSchema.plugin(uniqueValidator);

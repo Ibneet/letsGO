@@ -1,35 +1,45 @@
-const {v4: uuidv4} = require('uuid');
 const { validationResult } = require('express-validator')
 
 const HttpError = require('../models/http-error');
 const User = require('../models/user');
 
-const DUMMY_USERS = [
-    {
-        user_id: 'u1',
-        name: 'Ibneet Kaur',
-        email: 'wow@gmail.com',
-        password: 'password',
-        phone_no: '242413',
-        gender: 'female',
-        dob: '1999-06-06',
-        occupation: 'student',
-        
-    }
-]
 
-const getUsers = (req, res, next) => {
-    res.json({ users: DUMMY_USERS });
+const getUsers = async (req, res, next) => {
+    let users;
+    try{
+        users = await User.find({}, '-password');
+    }catch(err){
+        const error = new HttpError(
+            'Could not retrieve the users.',
+            500
+        );
+        return next(error);
+    }
+    res.json({users: users.map(user => user.toObject({ getters: true }))});
 }
 
-const login = (req, res, next) => {
+const login = async (req, res, next) => {
     const { email, password } = req.body;
 
-    const identifiedUser = DUMMY_USERS.find(u => u.email === email);
-    if(!identifiedUser || identifiedUser.password !== password){
-        throw new HttpError('Could not identify user, check the credentials', 401);
+    let existingUser
+    try{
+        existingUser = await User.findOne({ email: email })
+    }catch(err){
+        const error = new HttpError(
+            'Logging in failed, please try again later',
+            500
+        );
+        return next(error);
     }
-    
+
+    if(!existingUser || existingUser.password !== password){
+        const error = new HttpError(
+            'Invalid credentials, could not log you in.',
+            401
+        );
+        return next(error);
+    }
+
     res.json({ message: 'Logged in!' });
 }
 
@@ -38,7 +48,10 @@ const signup = async (req, res, next) => {
     if(!errors.isEmpty()){
         console.log(errors);
         return next(
-            new HttpError('Invalid inputs passed', 422)
+            new HttpError(
+                'Invalid inputs passed', 
+                422
+            )
         ) 
     }
 
@@ -67,7 +80,8 @@ const signup = async (req, res, next) => {
         name,
         email,
         password,
-        phone_number
+        phone_number,
+        journeys: []
     });
 
     try{
@@ -83,25 +97,44 @@ const signup = async (req, res, next) => {
     res.status(201).json({user: createdUser});
 }
 
-const details = (req, res, next) => {
+const details = async (req, res, next) => {
     const errors = validationResult(req);
     if(!errors.isEmpty()){
         console.log(errors);
         throw new HttpError('Invalid inputs passed', 422);
     }
 
-    const { image, phone_number, gender, dob, occupation } = req.body;
+    const { phone_number, gender, dob, occupation } = req.body;
     const userId = req.params.uid;
 
-    const addedUser = { ...DUMMY_USERS.find = (u => u.user_id === userId)};
-    const userIndex = DUMMY_USERS.findIndex(u => u.user_id === userId);
-    addedUser.phone_no = phone_no;
-    addedUser.gender = gender;
-    addedUser.dob = dob;
-    addedUser.occupation = occupation;
+    let user;
+    try{
+        user = await User.findById(userId);
+    }catch(err){
+        const error = new HttpError(
+            'Something went wrong, could not add your details.',
+            500
+        );
+        return next(error);
+    }
 
-    DUMMY_USERS[userIndex] = {...DUMMY_USERS[userIndex],...addedUser};
-    res.status(200).json({user: addedUser});
+    user.image = 'https://i.pinimg.com/736x/de/b4/62/deb4626e2817b49c85bc9a64efa54694.jpg';
+    user.phone_number = phone_number;
+    user.gender = gender;
+    user.dob = dob;
+    user.occupation = occupation;
+
+    try{
+        await user.save();
+    }catch(err){
+        const error = new HttpError(
+            'Something went wrong, could not add your details.',
+            500
+        );
+        return next(error);
+    }
+
+    res.status(200).json({user: user.toObject({ getters: true })});
 }
 
 exports.getUsers = getUsers;

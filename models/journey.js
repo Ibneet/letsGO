@@ -6,7 +6,7 @@ const journeySchema = new Schema({
     from: { type: String, required: true },
     to: { type: String, required: true },
     date: { type: Date, default: Date.now },
-    creator: { type: String, required: true },
+    creator: { type: mongoose.Types.ObjectId, required: true, ref: 'User' },
     withWhom: { type: String, default: null },
 });
 

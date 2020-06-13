@@ -23,7 +23,7 @@ router.post('/signup',
     ],
     usersControllers.signup);
 
-router.patch('/details/:uid',
+router.put('/details/:uid',
     [
         check('phone_number')
             .not()

@@ -1,7 +1,8 @@
 const express = require('express');
 const { check } = require('express-validator');
 
-const usersControllers = require('../controllers/users-controller')
+const auth = require('../middleware/auth');
+const usersControllers = require('../controllers/users-controller');
 
 const router = express.Router();
 
@@ -23,7 +24,8 @@ router.post('/signup',
     ],
     usersControllers.signup);
 
-router.put('/details/:uid',
+router.patch('/details/:uid',
+    auth,
     [
         check('phone_number')
             .not()

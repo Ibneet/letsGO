@@ -1,8 +1,8 @@
-const { validationResult } = require('express-validator')
+const { validationResult } = require('express-validator');
 
 const HttpError = require('../models/http-error');
 const User = require('../models/user');
-
+// require('dotenv').config;
 
 const getUsers = async (req, res, next) => {
     let users;
@@ -40,7 +40,18 @@ const login = async (req, res, next) => {
         return next(error);
     }
 
-    res.json({ message: 'Logged in!' });
+    let token;
+    try{
+        token = await existingUser.generateAuthToken();
+    }catch(err){
+        const error = new HttpError(
+            'Can not generate a token, please try again later.',
+            404
+        );
+        return next(error);
+    }
+
+    res.json({ existingUser, token});
 }
 
 const signup = async (req, res, next) => {
@@ -94,7 +105,18 @@ const signup = async (req, res, next) => {
         return next(error);
     }
 
-    res.status(201).json({user: createdUser});
+    let token;
+    try{
+        token = await createdUser.generateAuthToken();
+    }catch(err){
+        const error = new HttpError(
+            'Can not generate a token, please try again later.',
+            404
+        );
+        return next(error);
+    }
+
+    res.status(201).json({createdUser, token});
 }
 
 const details = async (req, res, next) => {
@@ -137,7 +159,28 @@ const details = async (req, res, next) => {
     res.status(200).json({user: user.toObject({ getters: true })});
 }
 
+// const authenticateToken = (req, res, next) => {
+//     const authHeader = req.headers['authorization'];
+//     const token = authHeader && authHeader.split(' ')[1];
+//     if(token == null) return res.sendStatus(401);
+
+//     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, 
+//         (err, existingUser) => {
+//             if(err) return res.sendStatus(403);
+//             req.currentUser = existingUser;
+//             next();
+//         }
+//     );
+// }
+
+// function generateAccessToken(currentUser){
+//     return jwt.sign(currentUser, process.env.ACCESS_TOKEN_SECRET, 
+//         { expiresIn: '20d' }
+//     );
+// }
+
 exports.getUsers = getUsers;
 exports.login = login;
 exports.signup = signup;
 exports.details = details;
+// exports.authenticateToken = authenticateToken;

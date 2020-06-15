@@ -1,7 +1,8 @@
 const express = require('express');
 const { check } = require('express-validator');
 
-const journeysControllers = require('../controllers/journerys-controller')
+const journeysControllers = require('../controllers/journerys-controller');
+// const usersControllers = require('../controllers/users-controller');
 
 const router = express.Router();
 
@@ -22,6 +23,7 @@ router.post(
             .isEmpty(),
         
     ],
+    // usersControllers.authenticateToken,
     journeysControllers.addJourney
 );
 
@@ -31,6 +33,8 @@ router.patch('/:jid/:uid', journeysControllers.journeyDone);
 
 router.patch('/history/notYet/:jid', journeysControllers.notDoneYet);
 
-router.delete('/:jid', journeysControllers.deleteJourney);
+router.delete('/:jid',
+// usersControllers.authenticateToken, 
+journeysControllers.deleteJourney);
 
 module.exports = router;

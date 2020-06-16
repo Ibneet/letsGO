@@ -3,7 +3,6 @@ const { validationResult } = require('express-validator');
 const HttpError = require('../models/http-error');
 const User = require('../models/user');
 const Journey = require('../models/journey');
-// require('dotenv').config;
 
 const getUsers = async (req, res, next) => {
     let users;
@@ -67,7 +66,7 @@ const signup = async (req, res, next) => {
         ) 
     }
 
-    const {name, email, password, phone_number} = req.body;
+    const {name, email, password} = req.body;
 
     let existingUser
     try{
@@ -92,7 +91,6 @@ const signup = async (req, res, next) => {
         name,
         email,
         password,
-        phone_number,
         journeys: []
     });
 

@@ -20,12 +20,6 @@ const userSchema = new Schema({
     tokens: [{ token:{type: String, required: true} }]
 });
 
-// userSchema.virtual('journeys', {
-//     ref: 'Journey',
-//     localField: '_id',
-//     foreignField: 'creator'
-// })
-
 userSchema.plugin(uniqueValidator);
 
 userSchema.methods.generateAuthToken = async function(){

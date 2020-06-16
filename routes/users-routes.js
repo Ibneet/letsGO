@@ -22,9 +22,10 @@ router.post('/signup',
             .isLength({min: 6})
         
     ],
-    usersControllers.signup);
+    usersControllers.signup
+);
 
-router.patch('/details/:uid',
+router.patch('/details/me',
     auth,
     [
         check('phone_number')
@@ -39,8 +40,18 @@ router.patch('/details/:uid',
         check('occupation')
             .not()
             .isEmpty(),
+        check('password')
+            .not()
+            .isEmpty(),
         
     ],
-    usersControllers.details);
+    usersControllers.details
+);
+
+router.post('/logout', auth, usersControllers.logout);
+
+router.post('/logoutAll', auth, usersControllers.logoutAll);
+
+router.delete('/me', auth, usersControllers.deleteProfile);
 
 module.exports = router;

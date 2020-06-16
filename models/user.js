@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
 const uniqueValidator = require('mongoose-unique-validator');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
-require('dotenv').config;
+const Journey = require('./journey');
 
 const Schema = mongoose.Schema;
 
@@ -19,10 +20,17 @@ const userSchema = new Schema({
     tokens: [{ token:{type: String, required: true} }]
 });
 
+// userSchema.virtual('journeys', {
+//     ref: 'Journey',
+//     localField: '_id',
+//     foreignField: 'creator'
+// })
+
 userSchema.plugin(uniqueValidator);
 
 userSchema.methods.generateAuthToken = async function(){
     const user = this;
+
     const token = jwt.sign({_id: user._id.toString()}, 'thisisletsgo');
 
     user.tokens = user.tokens.concat({ token });
@@ -30,5 +38,33 @@ userSchema.methods.generateAuthToken = async function(){
 
     return token;
 }
+
+userSchema.methods.toJSON = function () {
+    const user = this;
+
+    const userObject = user.toObject();
+
+    delete userObject.password;
+    delete userObject.tokens;
+
+    return userObject;
+}
+
+userSchema.pre('save', async function(next){
+    const user = this;
+
+    if(user.isModified('password')){
+        user.password = await bcrypt.hash(user.password, 8);
+    }
+
+    next();
+})
+
+userSchema.pre('remove', async function(next) {
+    const user = this;
+
+    await Journey.deleteMany({ creator: user._id });
+    next();
+})
 
 module.exports = mongoose.model('User', userSchema);

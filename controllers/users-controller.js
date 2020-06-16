@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator');
 
 const HttpError = require('../models/http-error');
 const User = require('../models/user');
+const Journey = require('../models/journey');
 // require('dotenv').config;
 
 const getUsers = async (req, res, next) => {
@@ -126,12 +127,11 @@ const details = async (req, res, next) => {
         throw new HttpError('Invalid inputs passed', 422);
     }
 
-    const { phone_number, gender, dob, occupation } = req.body;
-    const userId = req.params.uid;
+    const { phone_number, gender, dob, occupation, password } = req.body;
 
     let user;
     try{
-        user = await User.findById(userId);
+        user = req.user;
     }catch(err){
         const error = new HttpError(
             'Something went wrong, could not add your details.',
@@ -145,6 +145,7 @@ const details = async (req, res, next) => {
     user.gender = gender;
     user.dob = dob;
     user.occupation = occupation;
+    user.password = password
 
     try{
         await user.save();
@@ -159,28 +160,55 @@ const details = async (req, res, next) => {
     res.status(200).json({user: user.toObject({ getters: true })});
 }
 
-// const authenticateToken = (req, res, next) => {
-//     const authHeader = req.headers['authorization'];
-//     const token = authHeader && authHeader.split(' ')[1];
-//     if(token == null) return res.sendStatus(401);
+const logout = async (req, res, next) => {
+    try{
+        req.user.tokens = req.user.tokens.filter((token) => {
+            return token.token !== req.token;
+        })
+        await req.user.save();
 
-//     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, 
-//         (err, existingUser) => {
-//             if(err) return res.sendStatus(403);
-//             req.currentUser = existingUser;
-//             next();
-//         }
-//     );
-// }
+        res.status(200).json({message: 'Logged out'});
+    }catch(err){
+        const error = new HttpError(
+            'Can not perform the logout function, please try again later.',
+            500
+        );
+        return next(error);
+    }
+}
 
-// function generateAccessToken(currentUser){
-//     return jwt.sign(currentUser, process.env.ACCESS_TOKEN_SECRET, 
-//         { expiresIn: '20d' }
-//     );
-// }
+const logoutAll = async (req, res, next) => {
+    try{
+        req.user.tokens = []
+        await req.user.save();
+
+        res.status(200).json({message: 'Logged out of all the sessions'});
+    }catch(err){
+        const error = new HttpError(
+            'Can not perform the logout function, please try again later.',
+            500
+        );
+        return next(error);
+    }
+}
+
+const deleteProfile = async (req, res, next) => {
+    try{
+        await req.user.remove();
+        res.status(200).json({message: 'Account deleted.'});
+    }catch(err){
+        const error = new HttpError(
+            'Can not delete your account, please try again later.',
+            500
+        );
+        return next(error);
+    }
+}
 
 exports.getUsers = getUsers;
 exports.login = login;
 exports.signup = signup;
 exports.details = details;
-// exports.authenticateToken = authenticateToken;
+exports.logout = logout;
+exports.logoutAll = logoutAll;
+exports.deleteProfile = deleteProfile;

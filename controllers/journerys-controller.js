@@ -3,11 +3,9 @@ const mongoose = require('mongoose');
 
 const HttpError = require('../models/http-error');
 const Journey = require('../models/journey');
-const User = require('../models/user');
-
 
 const getCompanion = async (req, res, next) => {
-    const journeyUser = req.params.uid;
+    const journeyUser = req.user._id;
     const journeyFrom = req.params.jfrom;
     const journeyTo = req.params.jto;
     const journeyDate = req.params.jdate;
@@ -43,7 +41,7 @@ const getCompanion = async (req, res, next) => {
 }
 
 const getJournerysHistory = async (req, res, next) => {
-    const journeyUser = req.params.uid;
+    const journeyUser = req.user._id;
 
     let journey;
     try{
@@ -67,7 +65,7 @@ const getJournerysHistory = async (req, res, next) => {
 }
 
 const getCurrentJourneys = async (req, res, next) => {
-    const journeyUser = req.params.uid;
+    const journeyUser = req.user._id;
 
     let journey;
     try{
@@ -101,40 +99,18 @@ const addJourney = async (req, res, next) => {
         );
     }
 
-    const { from, to, date, creator } = req.body;
+    const { from, to, date } = req.body;
     const addedJourney = new Journey({
         from,
         to,
         date,
-        creator
+        creator: req.user._id
     });
 
-    let user;
     try{
-        user = await User.findById(creator);
-    }catch(err){
-        const error = new HttpError(
-            'Adding journey failed, please try again later.',
-            500
-        );
-        return next(error);
-    }
-
-    if(!user){
-        const error = new HttpError(
-            'Could not find user for provided id.',
-            404
-        );
-        return next(error);
-    }
-
-    try{
-        const sess = await mongoose.startSession();
-        sess.startTransaction();
-        await addedJourney.save({ session: sess });
-        user.journeys.push(addedJourney);
-        await user.save({ session: sess });
-        await sess.commitTransaction();
+        await addedJourney.save();
+        req.user.journeys.push(addedJourney);
+        await req.user.save();
     }catch(err){
         const error = new HttpError(
             'Failed to add this journey, please try again.',
@@ -152,11 +128,11 @@ const updateJourney = async (req, res, next) => {
 
     let journey;
     try{
-        journey = await Journey.findById(journeyId);
+        journey = await Journey.findOne({_id: journeyId, creator: req.user._id});
     }catch(err){
         const error = new HttpError(
             'Something went wrong, could not update journey',
-            500
+            404
         );
         return next(error);
     }
@@ -184,7 +160,7 @@ const journeyDone = async (req, res, next) => {
 
     let journey 
     try{
-        journey = await Journey.findById(journeyId);
+        journey = await Journey.findOne({_id: journeyId, creator: req.user._id});
     }catch(err){
         const error = new HttpError(
             'Something went wrong, could not update this journey as done.',
@@ -212,7 +188,7 @@ const notDoneYet = async (req, res, next) => {
 
     let journey;
     try{
-        journey = await Journey.findById(journeyId);
+        journey = await Journey.findOne({_id: journeyId, creator: req.user._id});
     }catch(err){
         const error = new HttpError(
             'Something went wrong, could not update this journey as not done.',
@@ -258,12 +234,9 @@ const deleteJourney = async (req, res, next) => {
     }
 
     try{
-        const sess = await mongoose.startSession();
-        sess.startTransaction();
-        await journey.remove({ session: sess });
+        await journey.remove();
         journey.creator.journeys.pull(journey);
-        await journey.creator.save({ session: sess });
-        await sess.commitTransaction();
+        await journey.creator.save();
     }catch(err){
         const error = new HttpError(
             'Something went wrong, could not delete this journey.',

@@ -168,7 +168,7 @@ const logout = async (req, res, next) => {
         })
         await req.user.save();
 
-        res.status(200).json({message: 'Logged out'});
+        res.status(200).json({successMessage: 'Logged out'});
     }catch(err){
         const error = new HttpError(
             'Can not perform the logout function, please try again later.',

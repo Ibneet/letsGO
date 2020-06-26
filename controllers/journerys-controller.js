@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 
 const HttpError = require('../models/http-error');
 const Journey = require('../models/journey');
+const User = require('../models/user');
 
 const getCompanion = async (req, res, next) => {
     const journeyUser = req.user._id;
@@ -37,7 +38,29 @@ const getCompanion = async (req, res, next) => {
         return next(error);
     }
 
-    res.json({journey: journey.map(journey => journey.toObject({ getters: true }))});
+    var companions = [];
+    var companion = {};
+    try{
+        for(var index in journey){
+            companion = await User.findById({
+                _id: journey[index].creator,
+            });
+            from = journey[index].from;
+            to = journey[index].to;
+            date = journey[index].date;
+            companion = {companion, from, to, date};
+            
+            companions = companions.concat(companion);
+        };
+    }catch(err){
+        const error = new HttpError(
+            'Something went wrong, could not find the companions.',
+            500
+        );
+        return next(error);
+    }
+
+    res.json({companions: companions});
 }
 
 const getJournerysHistory = async (req, res, next) => {
@@ -245,7 +268,7 @@ const deleteJourney = async (req, res, next) => {
         return next(error);
     }
 
-    res.status(200).json({message: 'Deleted a journey.'});
+    res.status(200).json({successMessage: 'Deleted a journey.'});
 }
 
 exports.getCompanion = getCompanion;

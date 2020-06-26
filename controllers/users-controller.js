@@ -146,7 +146,7 @@ const details = async (req, res, next) => {
     user.gender = gender;
     user.dob = dob;
     user.occupation = occupation;
-    user.password = password
+    user.password = password ? password : user.password
 
     try{
         await user.save();
@@ -183,7 +183,7 @@ const logoutAll = async (req, res, next) => {
         req.user.tokens = []
         await req.user.save();
 
-        res.status(200).json({message: 'Logged out of all the sessions'});
+        res.status(200).json({successMessage: 'Logged out of all the sessions'});
     }catch(err){
         const error = new HttpError(
             'Can not perform the logout function, please try again later.',
@@ -196,7 +196,7 @@ const logoutAll = async (req, res, next) => {
 const deleteProfile = async (req, res, next) => {
     try{
         await req.user.remove();
-        res.status(200).json({message: 'Account deleted.'});
+        res.status(200).json({successMessage: 'Account deleted.'});
     }catch(err){
         const error = new HttpError(
             'Can not delete your account, please try again later.',

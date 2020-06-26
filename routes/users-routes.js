@@ -40,10 +40,6 @@ router.patch('/details/me',
         check('occupation')
             .not()
             .isEmpty(),
-        check('password')
-            .not()
-            .isEmpty(),
-        
     ],
     usersControllers.details
 );

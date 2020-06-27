@@ -9,6 +9,7 @@ const HttpError = require('./models/http-error');
 const chatsRoutes = require('./routes/chats-routes');
 const journeysRoutes = require('./routes/journeys-routes');
 const usersRoutes = require('./routes/users-routes');
+const userchatRoutes = require('./routes/userchat-routes');
 
 const PORT = process.env.PORT || 5000;
 
@@ -20,6 +21,7 @@ const io = socketio(server);
 app.use('/api/journeys', journeysRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/chats', chatsRoutes);
+app.use('/api/chatuser', userchatRoutes);
 
 app.use((req, res, next) => {
     const error = new HttpError('Could not find the specified route', 404);
@@ -27,11 +29,11 @@ app.use((req, res, next) => {
 })
 
 app.use((error, req, res, next) => {
-    if(res.headerSent){
+    if (res.headerSent) {
         return next(error);
     }
     res.status(error.code || 500);
-    res.json({message: error.message || "An unknown error occurred"});
+    res.json({ message: error.message || "An unknown error occurred" });
 });
 
 //Reserved events
@@ -52,8 +54,8 @@ let STATUS_MESSAGE_SENT = 10002;
 
 
 mongoose
-    .connect('mongodb+srv://Ibneet:waheguru@letsgo-j6hql.mongodb.net/LetsGo?retryWrites=true&w=majority', 
-    { useNewUrlParser: true, useUnifiedTopology: true })
+    .connect('mongodb+srv://Ibneet:waheguru@letsgo-j6hql.mongodb.net/LetsGo?retryWrites=true&w=majority',
+        { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => { console.log('MongoDB Connected...') })
     .catch(err => { console.log(err) });
 
@@ -107,7 +109,7 @@ function singleChatHandler(socket, chat_message) {
     console.log('onMessage: ' + stringifyToJson(chat_message));
 
     Chat.collection.insertOne({
-        chatID: chat_message.from < chat_message.to? chat_message.from+chat_message.to: chat_message.to+chat_message.from,
+        chatID: chat_message.from < chat_message.to ? chat_message.from + chat_message.to : chat_message.to + chat_message.from,
         message: chat_message.message,
         from: chat_message.from,
         to: chat_message.to,

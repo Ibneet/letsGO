@@ -84,8 +84,30 @@ const getJournerysHistory = async (req, res, next) => {
             );
         return next(error);
     }
+    var journeys = [];
+    var j = {};
+    try{
+        for(var index in journey){
+            j = await User.findById({
+                _id: journey[index].withWhom,
+            });
+            jid = journey[index]._id
+            from = journey[index].from;
+            to = journey[index].to;
+            date = journey[index].date;
+            j = {j, jid, from, to, date};
+            
+            journeys = journeys.concat(j);
+        };
+    }catch(err){
+        const error = new HttpError(
+            'Something went wrong, could not find the companions.',
+            500
+        );
+        return next(error);
+    }
 
-    res.json({journey: journey.map(journey => journey.toObject({ getters: true }))});
+    res.json({journeys: journeys});
 }
 
 const getCurrentJourneys = async (req, res, next) => {

@@ -37,7 +37,7 @@ const getCompanion = async (req, res, next) => {
         );
         return next(error);
     }
-
+    console.log(journey);
     var companions = [];
     var companion = {};
     try{
@@ -45,10 +45,11 @@ const getCompanion = async (req, res, next) => {
             companion = await User.findById({
                 _id: journey[index].creator,
             });
+            jid = journey[index]._id
             from = journey[index].from;
             to = journey[index].to;
             date = journey[index].date;
-            companion = {companion, from, to, date};
+            companion = {companion, jid, from, to, date};
             
             companions = companions.concat(companion);
         };
@@ -68,7 +69,7 @@ const getJournerysHistory = async (req, res, next) => {
 
     let journey;
     try{
-        journey = await Journey.find({creator: journeyUser, withWhom: {$ne: null}});
+        journey = await Journey.find({ creator: journeyUser, withWhom: {$ne: null} });
     }catch(err){
         const error = new HttpError(
             'Something went wrong, could not find the journey.',
@@ -92,7 +93,7 @@ const getCurrentJourneys = async (req, res, next) => {
 
     let journey;
     try{
-        journey = await Journey.find({creator: journeyUser, withWhom: null});
+        journey = await Journey.find({ creator: journeyUser, withWhom: null });
     }catch(err){
         const error = new HttpError(
             'Something went wrong, could not find the journey.', 

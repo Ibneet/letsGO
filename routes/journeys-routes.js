@@ -29,9 +29,9 @@ router.post(
 
 router.patch('/:jid', auth, journeysControllers.updateJourney);
 
-router.patch('/:jid/:uid', auth, journeysControllers.journeyDone);
+// router.patch('/:jid/:uid', auth, journeysControllers.journeyDone);
 
-router.patch('/history/notYet/:jid', auth, journeysControllers.notDoneYet);
+// router.patch('/history/notYet/:jid', auth, journeysControllers.notDoneYet);
 
 router.delete('/:jid', auth, journeysControllers.deleteJourney);
 

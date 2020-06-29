@@ -19,7 +19,6 @@ const getCompanion = async (req, res, next) => {
                 from: journeyFrom, 
                 to: journeyTo, 
                 date: {$gte: journeyDate}, 
-                withWhom: null 
             }
         ).collation({ locale: 'en', strength: 2 });
     }catch(err){
@@ -69,7 +68,7 @@ const getJournerysHistory = async (req, res, next) => {
 
     let journey;
     try{
-        journey = await Journey.find({ creator: journeyUser, withWhom: {$ne: null} });
+        journey = await Journey.find({ creator: journeyUser, date: {$lt: Date.now()} });
     }catch(err){
         const error = new HttpError(
             'Something went wrong, could not find the journey.',
@@ -84,30 +83,8 @@ const getJournerysHistory = async (req, res, next) => {
             );
         return next(error);
     }
-    var journeys = [];
-    var j = {};
-    try{
-        for(var index in journey){
-            j = await User.findById({
-                _id: journey[index].withWhom,
-            });
-            jid = journey[index]._id
-            from = journey[index].from;
-            to = journey[index].to;
-            date = journey[index].date;
-            j = {j, jid, from, to, date};
-            
-            journeys = journeys.concat(j);
-        };
-    }catch(err){
-        const error = new HttpError(
-            'Something went wrong, could not find the companions.',
-            500
-        );
-        return next(error);
-    }
 
-    res.json({journeys: journeys});
+    res.json({journey: journey.map(journey => journey.toObject({ getters: true }))});
 }
 
 const getCurrentJourneys = async (req, res, next) => {
@@ -115,7 +92,7 @@ const getCurrentJourneys = async (req, res, next) => {
 
     let journey;
     try{
-        journey = await Journey.find({ creator: journeyUser, withWhom: null });
+        journey = await Journey.find({ creator: journeyUser, date: {$gte: Date.now()} });
     }catch(err){
         const error = new HttpError(
             'Something went wrong, could not find the journey.', 
@@ -200,62 +177,62 @@ const updateJourney = async (req, res, next) => {
     res.status(200).json({journey: journey.toObject({ getters: true })});
 }
 
-const journeyDone = async (req, res, next) => {
-    const journeyId = req.params.jid;
-    const companion = req.params.uid;
+// const journeyDone = async (req, res, next) => {
+//     const journeyId = req.params.jid;
+//     const companion = req.params.uid;
 
-    let journey 
-    try{
-        journey = await Journey.findOne({_id: journeyId, creator: req.user._id});
-    }catch(err){
-        const error = new HttpError(
-            'Something went wrong, could not update this journey as done.',
-            500
-        )
-        return next(error);
-    }
-    journey.withWhom = companion;
+//     let journey 
+//     try{
+//         journey = await Journey.findOne({_id: journeyId, creator: req.user._id});
+//     }catch(err){
+//         const error = new HttpError(
+//             'Something went wrong, could not update this journey as done.',
+//             500
+//         )
+//         return next(error);
+//     }
+//     journey.withWhom = companion;
 
-    try{
-        await journey.save();
-    }catch(err){
-        const error = new HttpError(
-            'Something went wrong, could not update this journey as done.',
-            500
-        );
-        return next(error);
-    }
+//     try{
+//         await journey.save();
+//     }catch(err){
+//         const error = new HttpError(
+//             'Something went wrong, could not update this journey as done.',
+//             500
+//         );
+//         return next(error);
+//     }
 
-    res.status(200).json({journey: journey.toObject({ getters: true })});
-}
+//     res.status(200).json({journey: journey.toObject({ getters: true })});
+// }
 
-const notDoneYet = async (req, res, next) => {
-    const journeyId = req.params.jid;
+// const notDoneYet = async (req, res, next) => {
+//     const journeyId = req.params.jid;
 
-    let journey;
-    try{
-        journey = await Journey.findOne({_id: journeyId, creator: req.user._id});
-    }catch(err){
-        const error = new HttpError(
-            'Something went wrong, could not update this journey as not done.',
-            500
-        )
-        return next(error);
-    }
-    journey.withWhom = null;
+//     let journey;
+//     try{
+//         journey = await Journey.findOne({_id: journeyId, creator: req.user._id});
+//     }catch(err){
+//         const error = new HttpError(
+//             'Something went wrong, could not update this journey as not done.',
+//             500
+//         )
+//         return next(error);
+//     }
+//     journey.withWhom = null;
 
-    try{
-        await journey.save();
-    }catch(err){
-        const error = new HttpError(
-            'Something went wrong, could not update this journey as not done.',
-            500
-        );
-        return next(error);
-    }
+//     try{
+//         await journey.save();
+//     }catch(err){
+//         const error = new HttpError(
+//             'Something went wrong, could not update this journey as not done.',
+//             500
+//         );
+//         return next(error);
+//     }
 
-    res.status(200).json({journey: journey.toObject({ getters: true })});
-}
+//     res.status(200).json({journey: journey.toObject({ getters: true })});
+// }
 
 const deleteJourney = async (req, res, next) => {
     const journeyId = req.params.jid;
@@ -299,6 +276,6 @@ exports.getJournerysHistory = getJournerysHistory;
 exports.getCurrentJourneys = getCurrentJourneys;
 exports.addJourney = addJourney;
 exports.updateJourney = updateJourney;
-exports.journeyDone = journeyDone;
-exports.notDoneYet = notDoneYet;
+// exports.journeyDone = journeyDone;
+// exports.notDoneYet = notDoneYet;
 exports.deleteJourney = deleteJourney;

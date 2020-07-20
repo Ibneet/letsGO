@@ -54,7 +54,7 @@ let STATUS_MESSAGE_SENT = 10002;
 
 
 mongoose
-    .connect('mongodb+srv://Ibneet:waheguru@letsgo-j6hql.mongodb.net/LetsGo?retryWrites=true&w=majority',
+    .connect('***************',
         { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => { console.log('MongoDB Connected...') })
     .catch(err => { console.log(err) });
@@ -231,7 +231,7 @@ function stringifyToJson(data) {
 // });
 
 // mongoose
-//     .connect('mongodb+srv://Ibneet:waheguru@letsgo-j6hql.mongodb.net/LetsGo?retryWrites=true&w=majority')
+//     .connect('******')
 //     .then(() => {
 //         app.listen(5000);
 //     })
